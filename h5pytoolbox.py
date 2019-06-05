@@ -271,7 +271,7 @@ def get_at_points(h5file, times, points, s=-2, R=None):
                 return get_at_points_work(W, times, points, s=s, R=R)
 
 
-def quick_plot(h5file, phase="real", R=0, l=2, m=2):
+def quick_plot(h5file, part, R=0, l=2, m=2):
     """
     Plot a sample waveform from a datafile.
     """
@@ -284,49 +284,29 @@ def quick_plot(h5file, phase="real", R=0, l=2, m=2):
     # Finte radii waveforms
     try:
         radius = int(sorted(f)[R][1:5])
-        time = f[idx(radius, l, m)][:, 0]
-        if phase == "real":
-            data = f[idx(radius, l, m)][:, 1]
-        elif phase == "imag":
-            data = f[idx(radius, l, m)][:, 2]
-        elif phase == "abs":
-            data = np.abs(f[idx(radius, l, m)][:, 1] + 1j * f[idx(radius, l, m)][:, 2])
-    except:
+        data, time = get_waveform(h5file, radius, l, m)
+        data = part(data)
+    except KeyError:
         pass
     # Extrapolated waveforms (NRAR)
     try:
-        time = f["Y_l" + str(l) + "_m" + str(m) + ".dat"][:, 0]
-        if phase == "real":
-            data = f["Y_l" + str(l) + "_m" + str(m) + ".dat"][:, 1]
-        if phase == "imag":
-            data = f["Y_l" + str(l) + "_m" + str(m) + ".dat"][:, 2]
-        if phase == "abs":
-            tag = "Y_l" + str(l) + "_m" + str(m) + ".dat"
-            data = np.abs(f[tag][:, 1] + 1j * f[tag][:, 2])
-    except:
+        tag = "Y_l" + str(l) + "_m" + str(m) + ".dat"
+        time = f[tag][:, 0]
+        data = part(f[tag][:, 1] + 1j * f[tag][:, 2])
+    except KeyError:
         pass
     # Extrapolated waveforms (SXS Catalog)
     try:
-        time = f["Extrapolated_N4.dir/Y_l" + str(l) + "_m" + str(m) + ".dat"][:, 0]
-        if phase == "real":
-            data = f["Extrapolated_N4.dir/Y_l" + str(l) + "_m" + str(m) + ".dat"][:, 1]
-        if phase == "imag":
-            data = f["Extrapolated_N4.dir/Y_l" + str(l) + "_m" + str(m) + ".dat"][:, 2]
-        if phase == "abs":
-            tag = "Extrapolated_N4.dir/Y_l" + str(l) + "_m" + str(m) + ".dat"
-            data = np.abs(f[tag][:, 1] + 1j * f[tag][:, 2])
-    except:
+        tag = "Extrapolated_N4.dir/Y_l" + str(l) + "_m" + str(m) + ".dat"
+        time = f[tag][:, 0]
+        data = part(f[tag][:, 1] + 1j * f[tag][:, 2])
+    except KeyError:
         pass
     # Extrapolated waveforms (GWFrames/scri default)
     try:
         time = f["Time"][:]
-        if phase == "real":
-            data = np.real(f[idx(l, m)][:])
-        if phase == "imag":
-            data = np.imag(f[idx(l, m)][:])
-        if phase == "abs":
-            data = np.abs(f[idx(l, m)][:])
-    except:
+        data = part(f[idx(l, m)][:])
+    except KeyError:
         pass
     plt.plot(time, data)
     plt.show()
