@@ -71,11 +71,11 @@ def identify_h5file(h5file):
             else:
                 return "FiniteRadii"
 
-
 def get_radii(h5file):
     """
     Returns the extraction radii from a FiniteRadii waveform file.
     """
+    import re
     if identify_h5file(h5file) != "FiniteRadii":
         raise Exception("Can only use get_radii on FiniteRadii waveform files.")
     if is_open_h5object(h5file):
@@ -84,7 +84,7 @@ def get_radii(h5file):
             radii.remove("VersionHist.ver")
         except ValueError:
             pass
-        radii = np.array([int(R[1:5]) for R in sorted(h5file)])
+        radii = np.array([int(re.search(r"""R(\d+).dir""",group)[1]) for group in sorted(h5file)])
         return radii
     else:
         with h5py.File(h5file, "r") as W:
@@ -93,7 +93,7 @@ def get_radii(h5file):
                 radii.remove("VersionHist.ver")
             except ValueError:
                 pass
-            radii = np.array([int(R[1:5]) for R in sorted(W)])
+            radii = np.array([int(re.search(r"""R(\d+).dir""",group)[1]) for group in sorted(W)])
         return radii
 
 
@@ -206,7 +206,7 @@ def swsh(s, modes, θ, φ, ψ=0):
     return sf.SWSH(qt.from_spherical_coords(θ, φ), s, modes) * np.exp(1j * s * ψ)
 
 
-def get_at_points(h5file, times, points, s=-2, R=None):
+def get_at_points(h5file, times, points, s=-2, R=None, eth=0):
     """
     Computes the value of a waveform quantity from an open HDF5 file (or a path to an HDF5 file)
     storing the spin-weighted spherical harmonic (SWSH) mode weights. Given a list of timestep 
@@ -230,45 +230,96 @@ def get_at_points(h5file, times, points, s=-2, R=None):
          order (-1 for OutmostExtraction.dir) at which to compute the waveform quantity.
          If the file is in the default scri extrapolation format, then this argument is 
          not required.
+
+    - eth: Apply the spin-weight raising (if eth > 0) or lower (if eth < 0) operator.
+           This argument specifies how many times to apply the operator.
+
+    NOTE: The first time this function is run, it may take some time to import the 
+    spherical_functions and quaternion python modules.
     """
 
-    def get_at_points_work(h5, times, points, s=-2, R=None):
+    def get_at_points_work(h5, times, points, s=-2, R=None, eth=0):
         if np.array(points).shape[1] == 2:
-            swshes = np.array([swsh(s, get_modes(h5), θ, φ, 0) for (θ, φ) in points])
+            swshes = np.array(
+                [swsh(s + eth, get_modes(h5), θ, φ, 0) for (θ, φ) in points]
+            )
         elif np.array(points).shape[1] == 3:
-            swshes = np.array([swsh(s, get_modes(h5), θ, φ, ψ) for (θ, φ, ψ) in points])
+            swshes = np.array(
+                [swsh(s + eth, get_modes(h5), θ, φ, ψ) for (θ, φ, ψ) in points]
+            )
         else:
             raise Exception(
                 "'points' must be a list of (θ,φ) pairs assuming ψ=0 or a list of (θ,φ,ψ) triples."
             )
         if R is not None:
-            weights = np.array(
-                [
-                    h5[idx(R, *mode)][times, 1] + 1j * h5[idx(R, *mode)][times, 2]
-                    for mode in get_modes(h5)
-                ]
-            )
+            if eth == 0:
+                weights = np.array(
+                    [
+                        h5[idx(R, *mode)][times, 1] + 1j * h5[idx(R, *mode)][times, 2]
+                        for mode in get_modes(h5)
+                    ]
+                )
+            elif eth > 0:
+                weights = np.array(
+                    [
+                        np.sqrt((mode[0] - s) * (mode[0] + s + 1)) ** eth
+                        * (
+                            h5[idx(R, *mode)][times, 1]
+                            + 1j * h5[idx(R, *mode)][times, 2]
+                        )
+                        for mode in get_modes(h5)
+                    ]
+                )
+            elif eth < 0:
+                weights = np.array(
+                    [
+                        (-np.sqrt((mode[0] + s) * (mode[0] - s + 1))) ** np.abs(eth)
+                        * (
+                            h5[idx(R, *mode)][times, 1]
+                            + 1j * h5[idx(R, *mode)][times, 2]
+                        )
+                        for mode in get_modes(h5)
+                    ]
+                )
         else:
-            weights = np.array([h5[idx(*mode)][times] for mode in get_modes(h5)])
+            if eth == 0:
+                weights = np.array([h5[idx(*mode)][times] for mode in get_modes(h5)])
+            elif eth > 0:
+                weights = np.array(
+                    [
+                        np.sqrt((mode[0] - s) * (mode[0] + s + 1)) ** eth
+                        * h5[idx(*mode)][times]
+                        for mode in get_modes(h5)
+                    ]
+                )
+            elif eth < 0:
+                weights = np.array(
+                    [
+                        (-np.sqrt((mode[0] + s) * (mode[0] - s + 1))) ** np.abs(eth)
+                        * h5[idx(*mode)][times]
+                        for mode in get_modes(h5)
+                    ]
+                )
+
         val = swshes.dot(weights)
         return val
 
     if identify_h5file(h5file) == "Boyle":
         if is_open_h5object(h5file):
-            return get_at_points_work(h5file, times, points, s=s)
+            return get_at_points_work(h5file, times, points, s=s, eth=eth)
         else:
             with h5py.File(h5file, "r") as W:
-                return get_at_points_work(W, times, points, s=s)
+                return get_at_points_work(W, times, points, s=s, eth=eth)
     else:
         if R is None:
             raise Exception(
                 "The 'R' argument is required for a FiniteRadii or NRAR file."
             )
         if is_open_h5object(h5file):
-            return get_at_points_work(h5file, times, points, s=s, R=R)
+            return get_at_points_work(h5file, times, points, s=s, R=R, eth=eth)
         else:
             with h5py.File(h5file, "r") as W:
-                return get_at_points_work(W, times, points, s=s, R=R)
+                return get_at_points_work(W, times, points, s=s, R=R, eth=eth)
 
 
 def quick_plot(h5file, part, R=0, l=2, m=2):
@@ -276,6 +327,7 @@ def quick_plot(h5file, part, R=0, l=2, m=2):
     Plot a sample waveform from a datafile.
     """
     import matplotlib.pyplot as plt
+    import re
 
     if type(h5file) is str:
         f = h5py.File(h5file, "r")
@@ -283,8 +335,8 @@ def quick_plot(h5file, part, R=0, l=2, m=2):
         f = h5file
     # Finte radii waveforms
     try:
-        radius = int(sorted(f)[R][1:5])
-        data, time = get_waveform(h5file, radius, l, m)
+        radius = int(re.search(r"""R(\d+).dir""",sorted(f)[R])[1])
+        data, time = get_waveform(f, radius, l, m)
         data = part(data)
     except KeyError:
         pass
