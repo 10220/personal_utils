@@ -71,11 +71,13 @@ def identify_h5file(h5file):
             else:
                 return "FiniteRadii"
 
+
 def get_radii(h5file):
     """
     Returns the extraction radii from a FiniteRadii waveform file.
     """
     import re
+
     if identify_h5file(h5file) != "FiniteRadii":
         raise Exception("Can only use get_radii on FiniteRadii waveform files.")
     if is_open_h5object(h5file):
@@ -84,7 +86,9 @@ def get_radii(h5file):
             radii.remove("VersionHist.ver")
         except ValueError:
             pass
-        radii = np.array([int(re.search(r"""R(\d+).dir""",group)[1]) for group in sorted(h5file)])
+        radii = np.array(
+            [int(re.search(r"""R(\d+).dir""", group)[1]) for group in sorted(h5file)]
+        )
         return radii
     else:
         with h5py.File(h5file, "r") as W:
@@ -93,7 +97,9 @@ def get_radii(h5file):
                 radii.remove("VersionHist.ver")
             except ValueError:
                 pass
-            radii = np.array([int(re.search(r"""R(\d+).dir""",group)[1]) for group in sorted(W)])
+            radii = np.array(
+                [int(re.search(r"""R(\d+).dir""", group)[1]) for group in sorted(W)]
+            )
         return radii
 
 
@@ -259,10 +265,10 @@ def get_at_points(h5file, times, points, s=-2, R=None, eth=0):
                         for mode in get_modes(h5)
                     ]
                 )
-            elif eth > 0:
+            elif eth == 1:
                 weights = np.array(
                     [
-                        np.sqrt((mode[0] - s) * (mode[0] + s + 1)) ** eth
+                        np.sqrt((mode[0] - s) * (mode[0] + s + 1))
                         * (
                             h5[idx(R, *mode)][times, 1]
                             + 1j * h5[idx(R, *mode)][times, 2]
@@ -270,35 +276,72 @@ def get_at_points(h5file, times, points, s=-2, R=None, eth=0):
                         for mode in get_modes(h5)
                     ]
                 )
-            elif eth < 0:
+            elif eth == 2:
                 weights = np.array(
                     [
-                        (-np.sqrt((mode[0] + s) * (mode[0] - s + 1))) ** np.abs(eth)
+                        np.sqrt(
+                            (mode[0] - s)
+                            * (mode[0] + s + 1)
+                            * (mode[0] - s - 1)
+                            * (mode[0] + s + 2)
+                        )
                         * (
                             h5[idx(R, *mode)][times, 1]
                             + 1j * h5[idx(R, *mode)][times, 2]
                         )
                         for mode in get_modes(h5)
                     ]
+                )
+            elif eth == -1:
+                weights = np.array(
+                    [
+                        (-np.sqrt((mode[0] + s) * (mode[0] - s + 1)))
+                        * (
+                            h5[idx(R, *mode)][times, 1]
+                            + 1j * h5[idx(R, *mode)][times, 2]
+                        )
+                        for mode in get_modes(h5)
+                    ]
+                )
+            else:
+                raise Exception(
+                    "This successive eth derivative has not been coded up yet"
                 )
         else:
             if eth == 0:
                 weights = np.array([h5[idx(*mode)][times] for mode in get_modes(h5)])
-            elif eth > 0:
+            elif eth == 1:
                 weights = np.array(
                     [
-                        np.sqrt((mode[0] - s) * (mode[0] + s + 1)) ** eth
+                        np.sqrt((mode[0] - s) * (mode[0] + s + 1))
                         * h5[idx(*mode)][times]
                         for mode in get_modes(h5)
                     ]
                 )
-            elif eth < 0:
+            elif eth == 2:
                 weights = np.array(
                     [
-                        (-np.sqrt((mode[0] + s) * (mode[0] - s + 1))) ** np.abs(eth)
+                        np.sqrt(
+                            (mode[0] - s)
+                            * (mode[0] + s + 1)
+                            * (mode[0] - s - 1)
+                            * (mode[0] + s + 2)
+                        )
                         * h5[idx(*mode)][times]
                         for mode in get_modes(h5)
                     ]
+                )
+            elif eth == -1:
+                weights = np.array(
+                    [
+                        (-np.sqrt((mode[0] + s) * (mode[0] - s + 1)))
+                        * h5[idx(*mode)][times]
+                        for mode in get_modes(h5)
+                    ]
+                )
+            else:
+                raise Exception(
+                    "This successive eth derivative has not been coded up yet"
                 )
 
         val = swshes.dot(weights)
@@ -322,6 +365,41 @@ def get_at_points(h5file, times, points, s=-2, R=None, eth=0):
                 return get_at_points_work(W, times, points, s=s, R=R, eth=eth)
 
 
+def format_group_names(h5file, dry_run=False):
+    """
+    Removes the prefix of groups in a FiniteRadii waveform file. If there is
+    no prefix then this does nothing. Ex:
+        "Psi2_R0100.dir" would be renamed to the standard "R0100.dir"
+
+    If the argument is an already opened HDF5 file, then it must have write
+    permission! Set 'dry_run=True' for it to print out what the changes would
+    be without actually overwriting the group names in the file.
+    """
+    import re
+
+    if is_open_h5object(h5file):
+        grps = sorted(h5file)
+        pattern = r"""R\d{4}.dir"""
+        for grp in grps:
+            p = re.search(pattern, grp)
+            if p:
+                print("Changing {} to {}".format(grp, p[0]))
+                if not dry_run:
+                    h5file.move(grp, p[0])
+
+    else:
+        with h5py.File(h5file, "r+") as F:
+            grps = sorted(F)
+            pattern = r"""R\d{4}.dir"""
+            for grp in grps:
+                p = re.search(pattern, grp)
+                if p:
+                    print("Changing {} to {}".format(grp, p[0]))
+                    if not dry_run:
+                        F.move(grp, p[0])
+    return
+
+
 def quick_plot(h5file, part, R=0, l=2, m=2):
     """
     Plot a sample waveform from a datafile.
@@ -335,7 +413,7 @@ def quick_plot(h5file, part, R=0, l=2, m=2):
         f = h5file
     # Finte radii waveforms
     try:
-        radius = int(re.search(r"""R(\d+).dir""",sorted(f)[R])[1])
+        radius = int(re.search(r"""R(\d+).dir""", sorted(f)[R])[1])
         data, time = get_waveform(f, radius, l, m)
         data = part(data)
     except KeyError:
