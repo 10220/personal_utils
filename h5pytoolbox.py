@@ -87,7 +87,7 @@ def get_radii(h5file):
         except ValueError:
             pass
         radii = np.array(
-            [int(re.search(r"""R(\d+).dir""", group)[1]) for group in sorted(h5file)]
+            [int(re.search(r"""R(\d+).dir""", group)[1]) for group in sorted(radii)]
         )
         return radii
     else:
@@ -98,7 +98,7 @@ def get_radii(h5file):
             except ValueError:
                 pass
             radii = np.array(
-                [int(re.search(r"""R(\d+).dir""", group)[1]) for group in sorted(W)]
+                [int(re.search(r"""R(\d+).dir""", group)[1]) for group in sorted(radii)]
             )
         return radii
 
