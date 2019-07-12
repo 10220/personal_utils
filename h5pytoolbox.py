@@ -197,27 +197,30 @@ def get_modes(h5file):
                 return modes
 
 
-def swsh(s, modes, θ, φ, ψ=0):
+def swsh(s, modes, theta, phi, psi=0):
     """
     Return a value of a spin-weighted spherical harmonic of spin-weight s. 
     If passed a list of several modes, then a numpy array is returned with 
     SWSH values of each mode for the given point.
     
-    For one mode:       swsh(s,[(l,m)],θ,φ,ψ=0)
-    For several modes:  swsh(s,[(l1,m1),(l2,m2),(l3,m3),...],θ,φ,ψ=0)
+    For one mode:       swsh(s,[(l,m)],theta,phi,psi=0)
+    For several modes:  swsh(s,[(l1,m1),(l2,m2),(l3,m3),...],theta,phi,psi=0)
     """
     import spherical_functions as sf
     import quaternion as qt
 
-    return sf.SWSH(qt.from_spherical_coords(θ, φ), s, modes) * np.exp(1j * s * ψ)
+    return sf.SWSH(qt.from_spherical_coords(theta, phi), s, modes) * np.exp(
+        1j * s * psi
+    )
 
 
 def get_at_points(h5file, times, points, s=-2, R=None, eth=0):
     """
-    Computes the value of a waveform quantity from an open HDF5 file (or a path to an HDF5 file)
-    storing the spin-weighted spherical harmonic (SWSH) mode weights. Given a list of timestep 
-    indices and a list of points on the sphere, this function returns an array of waveform values
-    of shape=(N_points, N_times).
+    Computes the value of a waveform quantity from an open HDF5 file (or a
+    path to an HDF5 file) storing the spin-weighted spherical harmonic (SWSH)
+    mode weights. Given a list of timestep indices and a list of points on the
+    sphere, this function returns an array of waveform values of shape 
+    (N_points, N_times).
     
     OPTIONS:
     
@@ -226,8 +229,9 @@ def get_at_points(h5file, times, points, s=-2, R=None, eth=0):
     - times:  A list of the timestep indices at which to compute the waveform quantity. 
               You can use slice(t0,t1) to pick all times from t0 to t1. 
     
-    - points: Can either be a list of (θ,φ,ψ) triples where ψ is the orientation of the 
-              SWSH at (θ,φ), or it can be a list of (θ,φ) pairs assuming ψ=0. 
+    - points: Can either be a list of (theta,phi,psi) triples where psi is the 
+              orientation of the SWSH at (theta,phi), or it can be a list of (theta,phi) 
+              pairs assuming psi=0. 
               
     - s: Spin-weight of the waveform quantity. (Default: -2)
     
@@ -247,15 +251,19 @@ def get_at_points(h5file, times, points, s=-2, R=None, eth=0):
     def get_at_points_work(h5, times, points, s=-2, R=None, eth=0):
         if np.array(points).shape[1] == 2:
             swshes = np.array(
-                [swsh(s + eth, get_modes(h5), θ, φ, 0) for (θ, φ) in points]
+                [swsh(s + eth, get_modes(h5), theta, phi, 0) for (theta, phi) in points]
             )
         elif np.array(points).shape[1] == 3:
             swshes = np.array(
-                [swsh(s + eth, get_modes(h5), θ, φ, ψ) for (θ, φ, ψ) in points]
+                [
+                    swsh(s + eth, get_modes(h5), theta, phi, psi)
+                    for (theta, phi, psi) in points
+                ]
             )
         else:
             raise Exception(
-                "'points' must be a list of (θ,φ) pairs assuming ψ=0 or a list of (θ,φ,ψ) triples."
+                "'points' must be a list of (theta,phi) pairs assuming psi=0 or a list "
+                "of (theta,phi,psi) triples."
             )
         if R is not None:
             if eth == 0:
