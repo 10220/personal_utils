@@ -462,8 +462,8 @@ def quick_plot(h5file, part, R=0, l=2, m=2):
     if match is not None:
         if match[2] == 'Psi':
             if not match[1] == '':
-                ylabel += r"^{"+match[1]+"}"
-            ylabel += r"r\Psi_"
+                ylabel += r"r^{"+match[1]+"}"
+            ylabel += r"\Psi_"
             ylabel += r"{"+match[3]+r"}"
         elif match[2] == 'h':
             ylabel += r"rh"
