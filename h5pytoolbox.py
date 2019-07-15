@@ -415,9 +415,20 @@ def quick_plot(h5file, part, R=0, l=2, m=2):
     import matplotlib.pyplot as plt
     import re
 
-    if type(h5file) is str:
-        f = h5py.File(h5file, "r")
+    if part == np.real:
+        ylabel = r"$ \Re \left ( "
+    elif part == np.imag:
+        ylabel = r"$ \Im \left ( "
+    elif part == np.abs or abs:
+        ylabel = r"$ \left | "
     else:
+        raise Exception("'part' must be np.real, np.imag, or np.abs")
+
+    if type(h5file) is str:
+        fname = h5file
+        f = h5py.File(fname, "r")
+    else:
+        fname = h5file.filename
         f = h5file
     # Finte radii waveforms
     try:
@@ -446,7 +457,34 @@ def quick_plot(h5file, part, R=0, l=2, m=2):
         data = part(f[idx(l, m)][:])
     except KeyError:
         pass
+
+    match = re.search(r"""r(\d{0,1})(Psi|h|Phi)(\d{0,1})""", fname)
+    if match is not None:
+        if match[2] == 'Psi':
+            if not match[1] == '':
+                ylabel += r"^{"+match[1]+"}"
+            ylabel += r"r\Psi_"
+            ylabel += r"{"+match[3]+r"}"
+        elif match[2] == 'h':
+            ylabel += r"rh"
+        elif match[2] == 'Phi':
+            ylabel += r"\Phi"
+            if 'PhiMinus' in fname:
+                ylabel += r"_{-}"
+            if 'PhiPlus' in fname:
+                ylabel += r"_{+}"
+    else:
+        ylabel += r"F"
+    ylabel += r"^{("+str(l)+r","+str(m)+r")}"
+    if part == np.real or part == np.imag:
+        ylabel += r" \right ) $"
+    elif part == np.abs or abs:
+        ylabel += r" \right | $"
+
+    plt.figure(dpi=400)
     plt.plot(time, data)
+    plt.xlabel('Coordinate Time (M)')
+    plt.ylabel(ylabel)
     plt.show()
     if type(h5file) is str:
         f.close()
