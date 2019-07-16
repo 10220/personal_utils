@@ -1,0 +1,228 @@
+# ~/.bashrc: executed by bash(1) for non-login shells.
+
+# If not running interactively, don't do anything
+case $- in
+    *i*) ;;
+      *) return;;
+esac
+
+################################################################################
+######                      GENERAL SETUP                                 ######
+################################################################################
+
+# don't put duplicate lines or lines starting with space in the history.
+HISTCONTROL=ignoreboth
+
+# append to the history file, don't overwrite it
+shopt -s histappend
+
+# for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
+HISTSIZE=1000
+HISTFILESIZE=2000
+
+# check the window size after each command and, if necessary,
+# update the values of LINES and COLUMNS.
+shopt -s checkwinsize
+
+# make less more friendly for non-text input files, see lesspipe(1)
+[ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
+
+# enable color support of ls and also add handy aliases
+if [ -x /usr/bin/dircolors ]; then
+    test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+    alias ls='ls --color=auto'
+    alias grep='grep --color=auto'
+    alias fgrep='fgrep --color=auto'
+    alias egrep='egrep --color=auto'
+fi
+
+# colored GCC warnings and errors
+#export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
+
+# Set the default editor
+EDITOR=vim
+
+################################################################################
+######                SET UP PROMPT (WITH POWERLINE)                      ######
+################################################################################
+
+# Set up the config for powerline shell
+if [ -f ~/.local/lib/python2.7/site-packages/powerline/bindings/bash/powerline.sh ]; then
+    source ~/.local/lib/python2.7/site-packages/powerline/bindings/bash/powerline.sh
+fi
+
+
+################################################################################
+######              SET UP PROMPT (WITHOUT POWERLINE)                     ######
+################################################################################
+
+# set variable identifying the chroot you work in (used in the prompt below)
+if [ -z "${debian_chroot:-}" ] && [ -r /etc/debian_chroot ]; then
+    debian_chroot=$(cat /etc/debian_chroot)
+fi
+
+# set a fancy prompt (non-color, unless we know we "want" color)
+case "$TERM" in
+    xterm-color|*-256color) color_prompt=yes;;
+esac
+
+if [ -n "$force_color_prompt" ]; then
+    if [ -x /usr/bin/tput ] && tput setaf 1 >&/dev/null; then
+	# We have color support; assume it's compliant with Ecma-48
+	# (ISO/IEC-6429). (Lack of such support is extremely rare, and such
+	# a case would tend to support setf rather than setaf.)
+	color_prompt=yes
+    else
+	color_prompt=
+    fi
+fi
+
+if [ "$color_prompt" = yes ]; then
+    PS1='${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
+else
+    PS1='${debian_chroot:+($debian_chroot)}\u@\h:\w\$ '
+fi
+unset color_prompt force_color_prompt
+
+# If this is an xterm set the title to user@host:dir
+case "$TERM" in
+xterm*|rxvt*)
+    PS1="\[\e]0;${debian_chroot:+($debian_chroot)}\u@\h: \w\a\]$PS1"
+    ;;
+*)
+    ;;
+esac
+
+
+################################################################################
+######                      USEFUL TOOLS                                  ######
+################################################################################
+
+# Add an "alert" alias for long running commands.  Use like so:
+#   sleep 10; alert
+alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
+
+# enable programmable completion features (you don't need to enable
+# this, if it's already enabled in /etc/bash.bashrc and /etc/profile
+# sources /etc/bash.bashrc).
+if ! shopt -oq posix; then
+  if [ -f /usr/share/bash-completion/bash_completion ]; then
+    . /usr/share/bash-completion/bash_completion
+  elif [ -f /etc/bash_completion ]; then
+    . /etc/bash_completion
+  fi
+fi
+
+# Search google for the given keywords
+function google {
+    /usr/bin/google-chrome "http://www.google.com/search?q=$*" 2> /dev/null
+}
+
+# Activate spack environment in the current shell.
+# This takes a few seconds, which why this is not run on shell startup.
+alias spackshell='. /home/dante/spack/share/spack/setup-env.sh'
+
+# Open a jupyter notebook from the wheeler cluster. Runs as follows:
+# > remote-jupyter ####
+# where #### is the four-digit port number set up from wheeler via:
+# > jupyter notebook --no-browser --port=####
+# Note that if the port number is not available on wheeler, then it 
+# will look for the next available port number instead.
+function remote-jupyter {
+    ssh -N -f -L localhost:8888:localhost:$* dante@wheeler.caltech.edu 2> /dev/null
+}
+
+
+################################################################################
+######                   ALIASES AND SHORTCUTS                            ######
+################################################################################
+
+# List directory contents alphabetically
+alias l='ls -lh'
+# List directory contents reverse alphabetically
+alias lr='ls -lhr'
+# List all directory contents alphabetically
+alias la='ls -lha'
+# List all directory contents reverse alphabetically
+alias lar='ls -lhar'
+# List all directory contents, oldest to newest
+alias ll='ls -lhart'
+# List all directory contents, newest to oldest
+alias llr='ls -lhat'
+# List directory contents by extension
+alias L='ls -lhX'
+# List all directory contents by extension
+alias La='ls -lhaX'
+
+# Prompts user before deleting more than 3 files
+alias rm='rm -I'
+# Prompts user before overwriting more than 3 files
+alias cp='cp -i'
+alias mv='mv -i'
+
+# Sourcing vim from ~/.vimrc
+alias vim='vim -S ~/.vimrc'
+
+# Shortcuts to favorite directories
+alias cds='cd ~/Documents/spec'
+alias cdsr='cd ~/Documents/spectre'
+
+
+################################################################################
+######                        PATH SETUP                                  ######
+################################################################################
+
+# Reset PATH to system default by executing:
+# > PATH=$DEFAULT_PATH
+DEFAULT_PATH=$PATH
+
+# Includes Spack in PATH
+export PATH="/home/dante/spack/bin:$PATH"
+
+# Includes custom utilities in PATH
+export PATH="/home/dante/Utils/bin:$PATH"
+
+# Includes SpEC support functions in PATH
+export PATH="/home/dante/Documents/spec/Support/bin:$PATH"
+
+#Set up perl for SpEC
+PATH="/opt/perl5/bin${PATH:+:${PATH}}"; export PATH;
+PERL5LIB="/opt/perl5/lib/perl5${PERL5LIB:+:${PERL5LIB}}"; export PERL5LIB;
+PERL_LOCAL_LIB_ROOT="/opt/perl5${PERL_LOCAL_LIB_ROOT:+:${PERL_LOCAL_LIB_ROOT}}"; export PERL_LOCAL_LIB_ROOT;
+PERL_MB_OPT="--install_base \"/opt/perl5\""; export PERL_MB_OPT;
+PERL_MM_OPT="INSTALL_BASE=/opt/perl5"; export PERL_MM_OPT;
+
+# Include the SpEC support directory in @INC
+export PERL5LIB=/home/dante/Documents/spec/Support/Perl
+
+
+################################################################################
+######                     CONDA MANAGEMENT                               ######
+################################################################################
+
+CONDA_ROOT='/home/dante/Documents/packages/miniconda3/'
+
+# Launch jupyter lab
+alias jlb=$CONDA_ROOT'bin/jupyter-lab ~/. &> /dev/null &'
+# Launch jupyter notebook from current directory
+alias jnb=$CONDA_ROOT'bin/jupyter-notebook &> /dev/null &'
+# Launch jupyter notebook from home directory
+alias jnbh=$CONDA_ROOT'bin/jupyter-notebook ~/. &> /dev/null &'
+# Launch ipython
+alias py=$CONDA_ROOT'bin/ipython'
+
+# Reset PATH to exclude conda by executing:
+# > PATH=$PYNATIVE_PATH
+PYNATIVE_PATH=$PATH
+
+# Adds conda to PATH for use as default.
+export PATH=$CONDA_ROOT"bin:$PATH"
+
+# Launch default system python.
+# When conda is included in PATH, the default 'python' command
+# points to conda's python.
+alias syspy='/usr/bin/python'
+# Run system pip.
+# When conda is included in PATH, the default 'pip' command
+# points to conda's pip.
+alias syspip='/usr/local/bin/pip'

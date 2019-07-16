@@ -1,0 +1,95 @@
+execute pathogen#infect()
+
+"-------------------------------------------------------------------------------
+" AESTHETICS
+"-------------------------------------------------------------------------------
+
+let g:airline_powerline_fonts = 1
+let g:syntastic_check_on_open = 1
+let g:airline#extensions#tabline#enabled = 1
+let g:airline_theme='one'
+colorscheme one
+set background=dark
+" highlight Normal ctermbg=black	"activate to have opaque background
+highlight  Normal guibg=NONE ctermbg=NONE
+hi Comment ctermfg=244
+set t_Co=256
+let g:rainbow_active = 1
+
+
+"-------------------------------------------------------------------------------
+" FUNCTIONALITY
+"-------------------------------------------------------------------------------
+
+filetype on
+filetype plugin on
+filetype indent on
+" Replace tabs to spaces
+set expandtab
+" Set tab increment
+set shiftwidth=2
+set tabstop=2
+
+map <C-p> :w \| !./push.sh<CR><CR>
+syntax enable
+set autoread
+set nocompatible
+set noshowmode
+set rtp+=$HOME/.local/lib/python2.7/site-packages/powerline/bindings/vim/
+set laststatus=2
+" Allow mouse capture 
+set mouse=a
+" Allow access to system clipboard
+set clipboard=unnamedplus
+
+" Set up hybrid line numbering with relative line numbering turned
+" off in insert mode of if the buffer loses focus
+set number relativenumber
+augroup numbertoggle
+  autocmd!
+  autocmd BufEnter,FocusGained,InsertLeave * set relativenumber
+  autocmd BufLeave,FocusLost,InsertEnter   * set norelativenumber
+augroup END
+
+" Allows search highlighting
+set hlsearch
+" Press space to clear highlighting until next search or 'n' keystroke
+:nnoremap <silent> <Space> :noh<Bar>:echo<CR>
+" Clear the search history upon exit
+autocmd BufWinLeave * :let @/ = ""
+
+set wrap
+set linebreak
+"set showbreak=>\ \ \
+"autocmd BufWritePre * %s/\s\+$//e
+
+" Jump to the last position when opening a file
+autocmd BufReadPost * if line("'\"") > 0 && line("'\"") <= line("$")
+    \| exe "normal! g'\"" | endif
+
+let g:syntastic_auto_jump = 0
+
+
+"-------------------------------------------------------------------------------
+" LATEX 
+"-------------------------------------------------------------------------------
+
+" REQUIRED. This makes vim invoke Latex-Suite when you open a tex file.
+filetype plugin on
+
+" OPTIONAL: Starting with Vim 7, the filetype of empty .tex files defaults to
+" 'plaintex' instead of 'tex', which results in vim-latex not being loaded.
+" The following changes the default filetype back to 'tex':
+let g:tex_flavor='latex'
+
+let g:Tex_ViewRule_pdf = 'okular' "'evince_dbus.py'
+let g:Tex_DefaultTargetFormat = 'pdf'
+let g:Tex_CompileRule_pdf = 'pdflatex --synctex=1 -interaction=nonstopmode $*'
+
+
+"-------------------------------------------------------------------------------
+" PYTHON
+"-------------------------------------------------------------------------------
+
+" Run currently open python script by pressing <F9>
+nnoremap <buffer> <F9> :w<CR>:exec '!python' shellescape(@%, 1)<cr>
