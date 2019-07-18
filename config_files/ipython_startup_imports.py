@@ -23,5 +23,6 @@ plt.rcParams.update({
     'mathtext.fontset' : 'stix' })
 # Nice font for LaTeX equations
 mpl.rc('text', usetex=True)
+mpl.rcParams['lines.linewidth'] = 0.75
 plt.rcParams['text.latex.preamble']=[r"\usepackage{amsmath}"]
 plt.rcParams['text.latex.preamble']=[r"\usepackage{amssymb}"]
