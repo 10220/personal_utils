@@ -222,6 +222,7 @@ export PATH=$CONDA_ROOT"bin:$PATH"
 # When conda is included in PATH, the default 'python' command
 # points to conda's python.
 alias syspy='/usr/bin/python'
+alias syspy3='/usr/bin/python3'
 # Run system pip.
 # When conda is included in PATH, the default 'pip' command
 # points to conda's pip.
