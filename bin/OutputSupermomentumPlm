@@ -12,13 +12,27 @@ from BMStoolbox import output_Plm
 import argparse
 
 p = argparse.ArgumentParser(description=__doc__)
-p.add_argument("--rh", type=str, help="extrapolated rhOverM HDF5 waveform file")
-p.add_argument("--psi2", type=str, help="extrapolated r3Psi2OverM HDF5 waveform file")
+p.add_argument(
+    "--rh",
+    dest="rh",
+    type=str,
+    required=True,
+    help="extrapolated rhOverM HDF5 waveform file",
+)
+p.add_argument(
+    "--psi2",
+    dest="psi2",
+    type=str,
+    required=True,
+    help="extrapolated r3Psi2OverM HDF5 waveform file",
+)
 p.add_argument(
     "--acc",
+    dest="acc",
     type=int,
-    default=4,
-    help="desired accuracy order in the derivatives, must be an even integer",
+    default=8,
+    help="desired accuracy order in the derivatives,"
+    "must be an even integer (default: 8)",
 )
 args = p.parse_args()
 
