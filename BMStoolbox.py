@@ -33,8 +33,8 @@ def compute_supermomentum_vector(Plm):
         return np.array(
             [
                 Plm[0, 0],
-                (Plm[1, 1] - Plm[1, -1]) / np.sqrt(6),
-                1j * (Plm[1, 1] + Plm[1, -1]) / np.sqrt(6),
+                (Plm[1, -1] - Plm[1, 1]) / np.sqrt(6),
+                1j * (Plm[1, -1] + Plm[1, 1]) / np.sqrt(6),
                 Plm[1, 0] / np.sqrt(3),
             ]
         )
@@ -42,8 +42,8 @@ def compute_supermomentum_vector(Plm):
         return np.array(
             [
                 Plm[idx(0, 0)][:],
-                (Plm[idx(1, 1)][:] - Plm[idx(1, -1)][:]) / np.sqrt(6),
-                1j * (Plm[idx(1, 1)][:] + Plm[idx(1, -1)][:]) / np.sqrt(6),
+                (Plm[idx(1, -1)][:] - Plm[idx(1, 1)][:]) / np.sqrt(6),
+                1j * (Plm[idx(1, -1)][:] + Plm[idx(1, 1)][:]) / np.sqrt(6),
                 Plm[idx(1, 0)][:] / np.sqrt(3),
             ]
         )
