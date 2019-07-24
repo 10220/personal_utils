@@ -1,28 +1,72 @@
 import numpy as np
 import h5py
 import sys
+from scipy.interpolate import InterpolatedUnivariateSpline
 
 sys.path.append("/home/dante/Utils/")
 from h5pytoolbox import get_modes, idx
 from bag_of_tricks import update_progress
 
 
-def compute_hdot(h, acc=8):
+def get_derivative(f, t, n=1, out_t=None):
     """
-    Computes the derivative of h with respect to Bondi time u.
+    Take the (anti)derivative of a function. If out_t is specified
+    then the derivative will be evaulated at those times instead.
     """
-    from findiff import FinDiff
+    if out_t is None:
+        out_t = t
+    # derivative
+    if n >= 1:
+        f_re = InterpolatedUnivariateSpline(t, f.real, k=3 + n)
+        f_im = InterpolatedUnivariateSpline(t, f.imag, k=3 + n)
+        return f_re.derivative(n)(out_t) + 1j * f_im.derivative(n)(out_t)
+    # antiderivative
+    elif n <= -1:
+        f_re = InterpolatedUnivariateSpline(t, f.real, k=3)
+        f_im = InterpolatedUnivariateSpline(t, f.imag, k=3)
+        return f_re.antiderivative(-n)(out_t) + 1j * f_im.antiderivative(-n)(out_t)
+    else:
+        raise Exception("n must be >= 1 or <= -1")
 
-    d_dt = FinDiff(0, h["Time"][:], 1, acc=acc)
-    hdot = {}
-    modes = get_modes(h)
-    NModes = len(modes)
-    update_progress(0)
-    for i in range(NModes):
-        mode = modes[i]
-        hdot[mode] = d_dt(h[idx(mode[0], mode[1])][:])
-        update_progress(i, NModes)
-    return hdot
+
+def get_waveform_derivative(W, n=1, out_t=None):
+    """
+    Take the derivative of every modes in a waveform file and return a dictionary
+    that is accessed by the same H5 groups as the original file.
+    """
+    if out_t is None:
+        out_t = W["Time"][:]
+    Wdot = {}
+    for (l, m) in get_modes(W):
+        Wdot[idx(l, m)] = get_derivative(W[idx(l, m)][:], W["Time"][:], n, out_t=out_t)
+    return Wdot
+
+
+def map_to_new_domain(f, t, t_new):
+    """
+    Interpolates a complex function to a new set of times.
+    """
+    f_re = InterpolatedUnivariateSpline(t, f.real)
+    f_im = InterpolatedUnivariateSpline(t, f.imag)
+    return f_re(t_new) + 1j * f_im(t_new)
+
+
+# def compute_hdot(h):
+#    """
+#    Computes the derivative of h with respect to Bondi time u.
+#    """
+# from findiff import FinDiff
+
+# d_dt = FinDiff(0, h["Time"][:], 1, acc=acc)
+# hdot = {}
+# modes = get_modes(h)
+# NModes = len(modes)
+# update_progress(0)
+# for i in range(NModes):
+#    mode = modes[i]
+#    hdot[mode] = d_dt(h[idx(mode[0], mode[1])][:])
+#    update_progress(i, NModes)
+# return hdot
 
 
 def compute_supermomentum_vector(Plm):
@@ -60,13 +104,13 @@ def compute_super_rest_mass(P):
     )
 
 
-def compute_Plm(Psi2, h, cached_hdot=None):
+def compute_Plm(Psi2, h):
     """
     Computes the supermomentum Plm.
     """
 
     def compute_I2(l, m, h, hdot):
-        import spherical_functions as sf
+        from spherical_functions import Wigner3j
 
         L1max = int(np.array(get_modes(h))[:, 0].max())
         L1min = int(np.array(get_modes(h))[:, 0].min())
@@ -85,22 +129,14 @@ def compute_Plm(Psi2, h, cached_hdot=None):
                     M_loop += (
                         (-1) ** (m + M)
                         * h[idx(L1, m + M)][:].conjugate()
-                        * hdot[(L2, M)]
-                        * sf.Wigner3j(l, L1, L2, m, -(m + M), M)
+                        * hdot[idx(L2, M)]
+                        * Wigner3j(l, L1, L2, m, -(m + M), M)
                     )
-                L2_loop += (
-                    np.sqrt(2 * L2 + 1) * sf.Wigner3j(l, L1, L2, 0, 2, -2) * M_loop
-                )
+                L2_loop += np.sqrt(2 * L2 + 1) * Wigner3j(l, L1, L2, 0, 2, -2) * M_loop
             L1_loop += np.sqrt(2 * L1 + 1) * L2_loop
         return 0.5 * np.sqrt((2 * l + 1) / np.pi) * L1_loop
 
-    if not cached_hdot:
-        print("Preparing hdot. This might take a few minutes.")
-        hdot = compute_hdot(h)
-        print("Done preparing hdot")
-    else:
-        hdot = cached_hdot
-
+    hdot = get_waveform_derivative(h)
     lmax = min(
         [np.array(get_modes(h))[:, 0].max(), np.array(get_modes(Psi2))[:, 0].max()]
     )
@@ -110,7 +146,9 @@ def compute_Plm(Psi2, h, cached_hdot=None):
     update_progress(it)
     for l in range(lmax + 1):
         for m in range(-l, l + 1):
-            I1 = (-1) ** m * Psi2[idx(l, -m)][:]
+            I1 = (-1) ** m * map_to_new_domain(
+                Psi2[idx(l, -m)][:], Psi2["Time"][:], h["Time"][:]
+            )
             I2 = compute_I2(l, m, h, hdot)
             I3 = (
                 0
@@ -127,10 +165,10 @@ def compute_Plm(Psi2, h, cached_hdot=None):
 
 def compute_Psi2_from_Bianchi(h, Psi4, Psi3, Psi2):
     """
-    Computes Psi2 from h, Psi4, and Psi3 by integrating the bianchi identity, then writes output to a new file.
+    Computes Psi2 from h, Psi4, and Psi3 by integrating the bianchi identity, then 
+    writes output to a new file.
     """
     from spinsfast import map2salm
-    from scipy.interpolate import InterpolatedUnivariateSpline
 
     lmax = min(
         [np.array(get_modes(h))[:, 0].max(), np.array(get_modes(Psi2))[:, 0].max()]
@@ -156,20 +194,16 @@ def compute_Psi2_from_Bianchi(h, Psi4, Psi3, Psi2):
 
     for pt in range(len(points)):
         h0 = h_at_pts[pt]
-        ψ4 = ψ4_at_pts[pt]
-        ðψ3 = ðψ3_at_pts[pt]
+        ψ4 = map_to_new_domain(ψ4_at_pts[pt], Psi4["Time"][:], h["Time"][:])
+        ðψ3 = map_to_new_domain(ðψ3_at_pts[pt], Psi3["Time"][:], h["Time"][:])
         dtψ2 = 0.25 * (-2 * ðψ3 + ψ4 * h0.conjugate())
-        dtψ2_re = InterpolatedUnivariateSpline(h["Time"][:], dtψ2.real)
-        dtψ2_im = InterpolatedUnivariateSpline(h["Time"][:], dtψ2.imag)
-        ψ2_re = dtψ2_re.antiderivative()
-        ψ2_im = dtψ2_im.antiderivative()
-        ψ2_extract = ψ2_at_pts[pt]
-        integration_const = (ψ2_extract[-1].real - ψ2_re(h["Time"][-1])) + 1j * (
-            ψ2_extract[-1].imag - ψ2_im(h["Time"][-1])
-        )
-        new_ψ2[int(pt / (2 * lmax + 1)), pt % (2 * lmax + 1)] = (
-            ψ2_re(h["Time"][:]) + 1j * ψ2_im(h["Time"][:]) + integration_const
-        )
+
+        ψ2 = get_derivative(dtψ2, h["Time"][:], n=-1)
+
+        ψ2_extract = map_to_new_domain(ψ2_at_pts[pt], Psi2["Time"][:], h["Time"][:])
+        integration_const = ψ2_extract[-1] - ψ2[-1]
+
+        new_ψ2[int(pt / (2 * lmax + 1)), pt % (2 * lmax + 1)] = ψ2 + integration_const
 
     spin_weight = 0
     psi2_slm = np.array(
@@ -192,15 +226,13 @@ def compute_Psi2_from_Bianchi(h, Psi4, Psi3, Psi2):
     return
 
 
-def output_Plm(h_file, Psi2_file, acc=8):
+def output_Plm(h_file, Psi2_file):
     """
     Computes the supermomentum Plm and writes to file.
     """
     with h5py.File(h_file, "r") as h, h5py.File(Psi2_file, "r") as Psi2:
-        print("Computing hdot...")
-        hdot = compute_hdot(h, acc=acc)
-        print("\nComputing Plm...")
-        Plm = compute_Plm(Psi2, h, cached_hdot=hdot)
+        print("Computing Plm...")
+        Plm = compute_Plm(Psi2, h)
 
         from shutil import copyfile
 
@@ -208,12 +240,19 @@ def output_Plm(h_file, Psi2_file, acc=8):
         copyfile(Psi2.filename, fname)
         print("\nWriting to file...")
         with h5py.File(fname, "r+") as new_Plm:
+            if h["Time"][0] < Psi2["Time"][0]:
+                t0_idx = (np.abs(h["Time"][:] - Psi2["Time"][0])).argmin()
+            else:
+                t0_idx = 0
+            del new_Plm["Time"]
+            new_Plm.create_dataset("Time", data=h["Time"][t0_idx:])
             modes = get_modes(Psi2)
             it = 0
             tot = len(modes)
             update_progress(0)
             for (l, m) in get_modes(Psi2):
-                new_Plm[idx(l, m)][:] = Plm[l, m]
+                del new_Plm[idx(l, m)]
+                new_Plm.create_dataset(idx(l, m), data=Plm[l, m][t0_idx:])
                 it += 1
                 update_progress(it, tot)
         print("\nOutput to {}".format(fname))
