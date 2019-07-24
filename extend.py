@@ -31,13 +31,13 @@ p.add_argument(
     '--NTimes',
     type=int,
     default=1000,
-    help='Number of timesteps desired in output waveform')
+    help='Number of timesteps desired in output waveform. (Default: 1000)')
 p.add_argument(
     '--final-t',
     dest='final_t',
     type=float,
     default=300.0,
-    help='Value of the final time')
+    help='Value of the final time. (Default: 300.0)')
 args = p.parse_args()
 
 list_of_h5files = get_list_of_h5files(args)
@@ -45,8 +45,15 @@ list_of_h5files = get_list_of_h5files(args)
 for h5file in list_of_h5files:
     with h5py.File(h5file,'r+') as f:
         groups = sorted(f)
+        try:
+            groups.remove('VersionHist.ver')
+        except ValueError:
+            pass
         subgroups = sorted(f[groups[0]])
-        subgroups.remove('InitialAdmEnergy.dat')
+        try:
+            subgroups.remove('InitialAdmEnergy.dat')
+        except ValueError:
+            pass
         for group in groups:
             for subgroup in subgroups:
                 idx = group + '/' + subgroup
