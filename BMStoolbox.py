@@ -4,7 +4,7 @@ import sys
 from scipy.interpolate import InterpolatedUnivariateSpline
 
 sys.path.append("/home/dante/Utils/")
-from h5pytoolbox import get_modes, idx
+from h5pytoolbox import get_modes, idx, identify_h5file, is_open_h5object
 from bag_of_tricks import update_progress
 
 
@@ -51,22 +51,26 @@ def map_to_new_domain(f, t, t_new):
     return f_re(t_new) + 1j * f_im(t_new)
 
 
-# def compute_hdot(h):
-#    """
-#    Computes the derivative of h with respect to Bondi time u.
-#    """
-# from findiff import FinDiff
-
-# d_dt = FinDiff(0, h["Time"][:], 1, acc=acc)
-# hdot = {}
-# modes = get_modes(h)
-# NModes = len(modes)
-# update_progress(0)
-# for i in range(NModes):
-#    mode = modes[i]
-#    hdot[mode] = d_dt(h[idx(mode[0], mode[1])][:])
-#    update_progress(i, NModes)
-# return hdot
+def find_t_merger(h):
+    """
+    Find the time of merger for an extrapolated strain rh waveform file. The merger
+    time is defined as the peak of the L2 Norm of all the modes of rh. 
+    """
+    if identify_h5file(h) == "FiniteRadii":
+        raise Exception("Can only use find_t_merger on ")
+    if is_open_h5object(h):
+        total_power = np.array(
+            [np.abs(h[idx(l, m)][:]) ** 2 for (l, m) in get_modes(h)]
+        ).sum(axis=0)
+        merger_idx = total_power.argmax()
+        return h["Time"][merger_idx]
+    else:
+        with h5py.File(h, "r") as W:
+            total_power = np.array(
+                [np.abs(W[idx(l, m)][:]) ** 2 for (l, m) in get_modes(W)]
+            ).sum(axis=0)
+            merger_idx = total_power.argmax()
+            return W["Time"][merger_idx]
 
 
 def compute_supermomentum_vector(Plm):
