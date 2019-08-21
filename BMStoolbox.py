@@ -143,11 +143,11 @@ def compute_Plm(Psi2, h):
             I3 = (
                 0
                 if l < np.array(get_modes(h))[:, 0].min()
-                else np.sqrt((l + 2) * (l + 1) * l * (l - 1))
+                else 0.5*np.sqrt((l + 2) * (l + 1) * l * (l - 1))
                 * (-1) ** m
                 * h[idx(l, -m)][:]
             )
-            Plm[l, m] = -0.125 * (4 * I1 + I2 + I3) / np.sqrt(np.pi)
+            Plm[l, m] = -0.5 * (I1 + I2 + 0.5*I3) / np.sqrt(np.pi)
             it += 1
             update_progress(it, tot)
     return Plm
