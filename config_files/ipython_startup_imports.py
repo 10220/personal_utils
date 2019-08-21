@@ -16,6 +16,16 @@ from h5pytoolbox import *
 # Set up pretty plots
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+
+# Hi res plots
+plt.rcParams['figure.figsize']=(7,3)
+plt.rcParams['figure.dpi']=500
+# Plot defaults
+plt.rcParams['lines.linewidth']=0.75
+plt.rcParams['grid.linewidth']=0.25
+plt.rcParams['grid.alpha']=0.25
+plt.rcParams['axes.grid']=True
+
 # Nice font for text
 plt.rcParams.update({
     'font.family' : 'FreeSerif',
@@ -23,6 +33,5 @@ plt.rcParams.update({
     'mathtext.fontset' : 'stix' })
 # Nice font for LaTeX equations
 mpl.rc('text', usetex=True)
-mpl.rcParams['lines.linewidth'] = 0.75
 plt.rcParams['text.latex.preamble']=[r"\usepackage{amsmath}"]
 plt.rcParams['text.latex.preamble']=[r"\usepackage{amssymb}"]
