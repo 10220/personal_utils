@@ -53,24 +53,10 @@ def map_to_new_domain(f, t, t_new):
 
 def find_t_merger(h):
     """
-    Find the time of merger for an extrapolated strain rh waveform file. The merger
-    time is defined as the peak of the L2 Norm of all the modes of rh. 
+    Find the time of merger for scri.WaveformModes object of type h. The 
+    merger time is defined as the peak of the L2 Norm of all the modes of rh. 
     """
-    if identify_h5file(h) == "FiniteRadii":
-        raise Exception("Can only use find_t_merger on ")
-    if is_open_h5object(h):
-        total_power = np.array(
-            [np.abs(h[idx(l, m)][:]) ** 2 for (l, m) in get_modes(h)]
-        ).sum(axis=0)
-        merger_idx = total_power.argmax()
-        return h["Time"][merger_idx]
-    else:
-        with h5py.File(h, "r") as W:
-            total_power = np.array(
-                [np.abs(W[idx(l, m)][:]) ** 2 for (l, m) in get_modes(W)]
-            ).sum(axis=0)
-            merger_idx = total_power.argmax()
-            return W["Time"][merger_idx]
+    return h.t[(np.abs(h.data)**2).sum(axis=1).argmax()]
 
 
 def compute_supermomentum_vector(Plm):
