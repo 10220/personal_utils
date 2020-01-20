@@ -35,3 +35,6 @@ plt.rcParams.update({
 mpl.rc('text', usetex=True)
 plt.rcParams['text.latex.preamble']=[r"\usepackage{amsmath}"]
 plt.rcParams['text.latex.preamble']=[r"\usepackage{amssymb}"]
+
+# set color cycle variable
+color_cycle = plt.rcParams['axes.prop_cycle'].by_key()['color']
