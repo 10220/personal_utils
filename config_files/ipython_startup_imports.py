@@ -4,8 +4,8 @@
 
 # Always helpful
 import numpy as np
-import scipy as sp
 from scipy import constants
+from scipy.interpolate import InterpolatedUnivariateSpline
 
 # Tools for HDF5 Analysis
 import h5py
