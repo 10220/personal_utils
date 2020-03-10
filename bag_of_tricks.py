@@ -10,7 +10,7 @@ def update_progress(step, total_steps=None):
         update_progress(0)
         for i in range(number_of_elements):
             example_function(i)
-            updated_progress(i, number_of_elements)
+            update_progress(i, number_of_elements)
     """
     import os
 
