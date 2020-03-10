@@ -1,9 +1,8 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 """
-Extrapolate SpEC waveforms with GWFrames
+Extrapolate SpEC waveforms with scri
 """
 
-from GWFrames.Extrapolation import Extrapolate
 import argparse
 from os.path import isfile, join
 
@@ -14,8 +13,9 @@ p.add_argument(
     '-f',
     nargs='+',
     type=int,
-    default=[5,4,3,2,1,0],
+    default=[6,5,4,3,2,1,0],
     help='Waveforms to extrapolate, using the guide:\n'
+         '    6: r2sigma_FiniteRadii_CodeUnits.h5\n'
          '    5: rh_FiniteRadii_CodeUnits.h5\n'
          '    4: rPsi4_FiniteRadii_CodeUnits.h5\n'
          '    3: r2Psi3_FiniteRadii_CodeUnits.h5\n'
@@ -70,10 +70,12 @@ p.add_argument(
          'to extracted data, counting down from the outermost extraction '
          'radius (which is -1).')
 p.add_argument(
-    '--NRARFormat',
+    '--scri-format',
+    dest='scri_format',
     action='store_true',
     default=False,
-    help='Use the NRAR format for the outputted files')
+    help='Use the default scri format instead of the NRAR format for '
+         'the outputted files.')
 p.add_argument(
     '--custom-filename',
     '-c',
@@ -84,6 +86,12 @@ p.add_argument(
          'of the files listed under the --filenames options. If given, '
          'this overrides --filenames.')
 args = p.parse_args()
+
+# import scri takes a while (~10 seconds). We 
+# do the import after parsing args so that it
+# doesn't take forever if the user only wants
+# to read the help text.
+from scri.extrapolation import extrapolate
 
 plot_format = ''
 diff_files  = ''
@@ -100,7 +108,7 @@ else:
     ChMass = args.ChMass
     horizons_file = ''
 
-if max(args.filenames) > 5 or min(args.filenames) < 0:
+if max(args.filenames) > 6 or min(args.filenames) < 0:
     raise Exception('The --filenames names option was not specified '
                     'correctly. Only the numbers in the help text may '
                     'be supplied as arguments.\n\nE.g. If you only want '
@@ -108,38 +116,37 @@ if max(args.filenames) > 5 or min(args.filenames) < 0:
                     '\textrapolate --filenames 5 4')
 
 if args.custom_filename:
-    Extrapolate(
+    extrapolate(
         InputDirectory = args.InDir,
         OutputDirectory = args.OutDir,
         DataFile = args.custom_filename,
         ChMass = ChMass,
         HorizonsFile = horizons_file,
         ExtrapolationOrders=args.extrap_orders,
-        UseStupidNRARFormat = args.NRARFormat,
+        UseStupidNRARFormat = args.scri_format,
         DifferenceFiles = diff_files,
         PlotFormat = plot_format 
     )
 
 else:
     for psi in args.filenames:
-        r_tag = 'r'+str(5-psi) if psi != 4 else 'r'
-        filename = r_tag + 'Psi'+ str(psi) + '_FiniteRadii_CodeUnits.h5'
-        lmin = abs(psi-2)
-    
-        if psi==5: 
+        if psi==6: 
+            filename = 'r2sigma_FiniteRadii_CodeUnits.h5'
+        elif psi==5: 
             filename = 'rh_FiniteRadii_CodeUnits.h5'
-            lmin = 2
-    
+        else:
+            r_tag = 'r'+str(5-psi) if psi != 4 else 'r'
+            filename = r_tag + 'Psi'+ str(psi) + '_FiniteRadii_CodeUnits.h5'
+
         if isfile(join(args.InDir,filename)):
-            Extrapolate(
+            extrapolate(
                 InputDirectory = args.InDir,
                 OutputDirectory = args.OutDir,
                 DataFile = filename,
                 ChMass = ChMass,
                 HorizonsFile = horizons_file,
-                LModes = range(lmin,100),
                 ExtrapolationOrders=args.extrap_orders,
-                UseStupidNRARFormat = args.NRARFormat,
+                UseStupidNRARFormat = args.scri_format,
                 DifferenceFiles = diff_files,
                 PlotFormat = plot_format 
             )
