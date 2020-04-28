@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 Extrapolate SpEC waveforms with scri
 """
@@ -123,7 +123,7 @@ if args.custom_filename:
         ChMass = ChMass,
         HorizonsFile = horizons_file,
         ExtrapolationOrders=args.extrap_orders,
-        UseStupidNRARFormat = args.scri_format,
+        UseStupidNRARFormat = not args.scri_format,
         DifferenceFiles = diff_files,
         PlotFormat = plot_format 
     )
@@ -146,7 +146,7 @@ else:
                 ChMass = ChMass,
                 HorizonsFile = horizons_file,
                 ExtrapolationOrders=args.extrap_orders,
-                UseStupidNRARFormat = args.scri_format,
+                UseStupidNRARFormat = not args.scri_format,
                 DifferenceFiles = diff_files,
                 PlotFormat = plot_format 
             )
