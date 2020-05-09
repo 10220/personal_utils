@@ -10,9 +10,9 @@ let g:airline#extensions#tabline#enabled = 1
 let g:airline_theme='one'
 colorscheme one
 set background=dark
-" highlight Normal ctermbg=black	"activate to have opaque background
-highlight  Normal guibg=NONE ctermbg=NONE
+highlight Normal guibg=NONE ctermbg=NONE
 hi Comment ctermfg=244
+" highlight Normal ctermbg=black	"activate to have opaque background
 set t_Co=256
 let g:rainbow_active = 1
 
@@ -67,8 +67,13 @@ set linebreak
 autocmd BufReadPost * if line("'\"") > 0 && line("'\"") <= line("$")
     \| exe "normal! g'\"" | endif
 
+" Don't jump to errors when detected
 let g:syntastic_auto_jump = 0
 
+" choose language for spell check
+:set spelllang=en_us
+" Point to wordlist for spell check
+:set spellfile=~/.vim/spell/en.utf-8.add
 
 "-------------------------------------------------------------------------------
 " LATEX 
@@ -93,3 +98,5 @@ let g:Tex_CompileRule_pdf = 'pdflatex --synctex=1 -interaction=nonstopmode $*'
 
 " Run currently open python script by pressing <F9>
 nnoremap <buffer> <F9> :w<CR>:exec '!python' shellescape(@%, 1)<cr>
+" Run currently open python script with ipython by pressing <F10>
+nnoremap <buffer> <F10> :w<CR>:exec '!ipython' shellescape(@%, 1)<cr>
