@@ -13,6 +13,19 @@ import sys
 sys.path.insert(0, '/home/dante/Utils/')
 from h5pytoolbox import *
 
+# For importing files
+# This is indexed by scri dataType
+# e.g. data_type_file_label[scri.h]
+data_type_file_label = {
+    6 : 'r2sigmaOverM',
+    7 : 'rhOverM',
+    5 : 'rMPsi4',
+    4 : 'r2Psi3',
+    3 : 'r3Psi2OverM',
+    2 : 'r4Psi1OverM2',
+    1 : 'r5Psi0OverM3',
+}
+
 # Set up pretty plots
 import matplotlib as mpl
 import matplotlib.pyplot as plt
