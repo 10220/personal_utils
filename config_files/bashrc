@@ -132,6 +132,11 @@ function remote-jupyter {
     ssh -N -f -L localhost:8888:localhost:$* dante@wheeler.caltech.edu 2> /dev/null
 }
 
+# Show complete info for SLURM jobs
+function jobinfo { # ARG1 = username
+    for JOBID in $(for JOB in $(squeue -u $*); do if [[ $JOB =~ ^[0-9]{6} ]]; then echo $JOB; fi; done); do scontrol show job $JOBID; done
+}
+
 
 ################################################################################
 ######                   ALIASES AND SHORTCUTS                            ######
