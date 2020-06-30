@@ -123,13 +123,13 @@ function google {
 alias spackshell='. /home/dante/spack/share/spack/setup-env.sh'
 
 # Open a jupyter notebook from the wheeler cluster. Runs as follows:
-# > remote-jupyter ####
-# where #### is the four-digit port number set up from wheeler via:
-# > jupyter notebook --no-browser --port=####
-# Note that if the port number is not available on wheeler, then it 
+# > remote-jupyter <remote_name> <port_number>
+# where <port_number> is the four-digit port number set up on remote via:
+# > jupyter notebook --no-browser --port=<port_number>
+# Note that if the port number is not available, then it 
 # will look for the next available port number instead.
-function remote-jupyter {
-    ssh -N -f -L localhost:8888:localhost:$* dante@wheeler.caltech.edu 2> /dev/null
+function remote-jupyter-aule {
+    ssh -N -f -L localhost:9000:localhost:9000 aule 2> /dev/null
 }
 
 # Show complete info for SLURM jobs
