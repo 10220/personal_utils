@@ -133,8 +133,24 @@ function remote-jupyter {
 }
 
 # Show complete info for SLURM jobs
+function jobinfov { # ARG1 = username
+    for JOBID in $(for JOB in $(squeue -u $*); do if [[ $JOB =~ ^[0-9]{6} ]]; then echo $JOB; fi; done) 
+    do 
+      scontrol show job $JOBID 
+    done
+}
+
+# Show only the most useful info for SLURM jobs
 function jobinfo { # ARG1 = username
-    for JOBID in $(for JOB in $(squeue -u $*); do if [[ $JOB =~ ^[0-9]{6} ]]; then echo $JOB; fi; done); do scontrol show job $JOBID; done
+    for i in $(jobinfov $*)
+    do
+      if [ ${i::3} == "Job" ]; then
+        echo $i
+        if [ ${i::8} == "JobState" ]; then
+          echo
+        fi
+      fi
+    done
 }
 
 
