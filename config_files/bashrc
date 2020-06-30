@@ -169,7 +169,7 @@ alias mv='mv -i'
 alias vim='vim -S ~/.vimrc'
 
 # Shortcuts to favorite directories
-alias cds='cd ~/Documents/spec'
+alias cds='cd ~/Documents/packages/spec'
 alias cdsr='cd ~/Documents/spectre'
 
 
@@ -188,7 +188,7 @@ export PATH="/home/dante/spack/bin:$PATH"
 export PATH="/home/dante/Utils/bin:$PATH"
 
 # Includes SpEC support functions in PATH
-export PATH="/home/dante/Documents/spec/Support/bin:$PATH"
+export PATH="/home/dante/Documents/packages/spec/Support/bin:$PATH"
 
 #Set up perl for SpEC
 PATH="/opt/perl5/bin${PATH:+:${PATH}}"; export PATH;
@@ -198,8 +198,9 @@ PERL_MB_OPT="--install_base \"/opt/perl5\""; export PERL_MB_OPT;
 PERL_MM_OPT="INSTALL_BASE=/opt/perl5"; export PERL_MM_OPT;
 
 # Include the SpEC support directory in @INC
-export PERL5LIB=/home/dante/Documents/spec/Support/Perl
+export PERL5LIB=/home/dante/Documents/packages/spec/Support/Perl
 
+export PERL5LIB=/opt/perl5/lib/perl5
 
 ################################################################################
 ######                     CONDA MANAGEMENT                               ######
