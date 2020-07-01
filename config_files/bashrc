@@ -249,3 +249,18 @@ alias syspy3='/usr/bin/python3'
 # When conda is included in PATH, the default 'pip' command
 # points to conda's pip.
 alias syspip='/usr/local/bin/pip'
+
+# Initialize Conda
+function init_conda {
+    __conda_setup="$('/home/dante/Documents/packages/miniconda3/bin/conda' 'shell.bash' 'hook' 2> /dev/null)"
+    if [ $? -eq 0 ]; then
+        eval "$__conda_setup"
+    else
+        if [ -f "/home/dante/Documents/packages/miniconda3/etc/profile.d/conda.sh" ]; then
+            . "/home/dante/Documents/packages/miniconda3/etc/profile.d/conda.sh"
+        else
+            export PATH="/home/dante/Documents/packages/miniconda3/bin:$PATH"
+        fi
+    fi
+    unset __conda_setup
+}
