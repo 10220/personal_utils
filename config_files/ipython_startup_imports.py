@@ -50,8 +50,25 @@ plt.rcParams.update({
     'mathtext.fontset' : 'stix' })
 # Nice font for LaTeX equations
 mpl.rc('text', usetex=True)
-plt.rcParams['text.latex.preamble']=[r"\usepackage{amsmath}"]
-plt.rcParams['text.latex.preamble']=[r"\usepackage{amssymb}"]
+plt.rcParams['text.latex.preamble']=r"\usepackage{amsmath}\usepackage{amssymb}"
 
-# set color cycle variable
-color_cycle = plt.rcParams['axes.prop_cycle'].by_key()['color']
+# Custom expanded color cycle
+color_cycle = [
+        (53/255.,  74/255.,  93/255.),   # black
+        (59/255.,  153/255., 217/255.),  # blue
+        (229/255., 126/255., 49/255.),   # orange
+        (53/255.,  206/255., 116/255.),  # green
+        (230/255., 78/255.,  67/255.),   # red
+        (154/255., 91/255.,  179/255.),  # purple
+        (240/255., 195/255., 48/255.),   # gold
+        '#e377c2',                       # pink
+        '#8c564b',                       # brown
+        '#7f7f7f',                       # gray
+        '#17becf',                       # teal
+        '#bcbd22',                       # lime
+    ]
+# Set this as the default
+plt.rcParams['axes.prop_cycle'] = plt.cycler(color=color_cycle)
+
+# Default mpl color cycle
+original_color_cycle = plt.rcParams['axes.prop_cycle'].by_key()['color']
