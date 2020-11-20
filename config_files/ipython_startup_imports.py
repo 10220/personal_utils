@@ -5,9 +5,11 @@
 # Always helpful
 import numpy as np
 from scipy import constants
-from scipy.interpolate import InterpolatedUnivariateSpline
+from scipy.interpolate import InterpolatedUnivariateSpline, CubicSpline
 
+# -----------------------------
 # Tools for HDF5 Analysis
+# -----------------------------
 import h5py
 import sys
 sys.path.insert(0, '/home/dante/Utils/')
@@ -26,7 +28,9 @@ data_type_file_label = {
     1 : 'r5Psi0OverM3',
 }
 
+#--------------------------
 # Set up pretty plots
+#--------------------------
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
