@@ -6,7 +6,7 @@ Extrapolate SpEC waveforms with scri
 import argparse
 from os.path import isfile, join
 
-p = argparse.ArgumentParser(description=__doc__, 
+p = argparse.ArgumentParser(description=__doc__,
                             formatter_class=argparse.RawTextHelpFormatter)
 p.add_argument(
     '--filenames',
@@ -85,9 +85,15 @@ p.add_argument(
     help='Name of the HDF5 waveform file to extrapolate, if not one '
          'of the files listed under the --filenames options. If given, '
          'this overrides --filenames.')
+p.add_argument(
+    '--error-tol',
+    dest='error_tol',
+    type=float,
+    default=0.0,
+    help='Simulation noise floor.')
 args = p.parse_args()
 
-# import scri takes a while (~10 seconds). We 
+# import scri takes a while (~10 seconds). We
 # do the import after parsing args so that it
 # doesn't take forever if the user only wants
 # to read the help text.
@@ -125,14 +131,14 @@ if args.custom_filename:
         ExtrapolationOrders=args.extrap_orders,
         UseStupidNRARFormat = not args.scri_format,
         DifferenceFiles = diff_files,
-        PlotFormat = plot_format 
+        PlotFormat = plot_format
     )
 
 else:
     for psi in args.filenames:
-        if psi==6: 
+        if psi==6:
             filename = 'r2sigma_FiniteRadii_CodeUnits.h5'
-        elif psi==5: 
+        elif psi==5:
             filename = 'rh_FiniteRadii_CodeUnits.h5'
         else:
             r_tag = 'r'+str(5-psi) if psi != 4 else 'r'
@@ -148,5 +154,6 @@ else:
                 ExtrapolationOrders=args.extrap_orders,
                 UseStupidNRARFormat = not args.scri_format,
                 DifferenceFiles = diff_files,
-                PlotFormat = plot_format 
+                PlotFormat = plot_format,
+                NoiseFloor = args.error_tol,
             )
