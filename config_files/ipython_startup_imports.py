@@ -50,7 +50,7 @@ plt.rcParams.update({
     'mathtext.fontset' : 'stix' })
 # Nice font for LaTeX equations
 mpl.rc('text', usetex=True)
-plt.rcParams['text.latex.preamble']=r"\usepackage{amsmath}\usepackage{amssymb}"
+plt.rcParams['text.latex.preamble']=r"\usepackage{amsmath}\usepackage{amssymb}\usepackage{mathrsfs}"
 
 # Custom expanded color cycle
 color_cycle = [
